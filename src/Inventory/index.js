@@ -26,13 +26,28 @@ class useOnEncounter extends Item {
   constructor(id){ super(id) }
 
   /**
-   * [useOn description]
-   * @param  {[type]} pokemon [description]
-   * @return {[type]}         [description]
+   * Gives a berry to the pokemon you are trying to captureing
+   * And lowers the count by one
+   *
+   * @param  {object} pokemon A pokemon to use item on
+   * @return {UseItemReviveResponse} Full server response
    */
   async useOn(pokemon){
     if(!pokemon.isCatching)
-      throw new Error('That pokemon already have max HP')
+      throw new Error('That pokemon can not be catched')
+
+    let res = await this.parent.Call([{
+      request: 'USE_ITEM_CAPTURE',
+      message: {
+        item_id: this.item_id,
+        encounter_id: pokemon.encounter_id,
+        spawn_point_id: pokemon.spawn_point_id,
+      }
+    }])
+
+    this.count--
+    return res
+
   }
 }
 
@@ -48,16 +63,10 @@ class useOnWounded extends Item {
     // Validate that the pokemon needs HP
     if(!pokemon.isWounded)
       throw new Error('That pokemon already have max HP')
+ 
 
-    await this.parent.Call([{
-      request: 'USE_ITEM_CAPTURE',
-      message: {
-        item_id: this.id,
-        encounter_id: pokemon.encounter_id,
-        spawn_point_id: pokemon.spawn_point_id,
-      }
-    }])
     this.count--
+    return res
   }
 }
 
@@ -65,22 +74,27 @@ class useOnDead extends Item {
   constructor(id){ super(id) }
 
   /**
-   * [useOn description]
-   * @return {[type]} [description]
+   * Revive fainted Pokémon. It also restores
+   * half of a fainted Pokémon's maximum HP
+   *
+   * @param  {object} pokemon A pokemon to use item on
+   * @return {UseItemReviveResponse} Full server response
    */
-  async useOn(){
+  async useOn(pokemon){
     // Validate that the pokemon needs HP
     if(!pokemon.isDead)
-      throw new Error('That pokemon already have max HP')
+      throw new Error('That pokemon is not dead')
 
-    this.parent.Call([{
+    var res = await this.parent.Call([{
       request: 'USE_ITEM_REVIVE',
       message: {
         item_id: this.id,
         pokemon_id: pokemon.pokemon_id,
       }
     }])
+
     this.count--
+    return res
   }
 }
 
